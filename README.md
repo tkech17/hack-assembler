@@ -1,4 +1,4 @@
-# hack-assembler
+# Hack Assembler
 Hack Programming Language Assembler
 
 In order to run project you must have golang installed.

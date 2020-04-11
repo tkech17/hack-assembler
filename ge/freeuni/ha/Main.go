@@ -2,16 +2,35 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 )
 
-const defaultDirectory = "files"
-const defaultFile = "tmp.txt"
+const (
+	defaultDirectory = "ge/freeuni/ha/resources"
+	defaultFile      = "tmp.txt"
+)
+
+type Parser interface {
+	Parse(content string) string
+}
+
+var parser Parser = getParser()
 
 func main() {
+	var content = getContentFromFile()
+	var parsed = parser.Parse(content)
+	fmt.Println(parsed)
+}
+
+func getContentFromFile() string {
 	var filePath = getFilePath()
-	fmt.Println(filePath)
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		fmt.Println("File reading error", err)
+	}
+	return string(data)
 }
 
 func getFilePath() string {

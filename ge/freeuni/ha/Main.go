@@ -13,7 +13,7 @@ const (
 )
 
 type Parser interface {
-	Parse(content string) string
+	Parse(content string) []string
 }
 
 var parser Parser = getParser()

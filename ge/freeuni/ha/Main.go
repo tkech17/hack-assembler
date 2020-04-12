@@ -12,15 +12,15 @@ const (
 	defaultFile      = "tmp.txt"
 )
 
-type Parser interface {
-	Parse(content string) []string
+type Assembler interface {
+	Assemble(assembly string) string
 }
 
-var parser Parser = getParser()
+var assembler Assembler = GetHackAssembler()
 
 func main() {
 	var content = getContentFromFile()
-	var parsed = parser.Parse(content)
+	var parsed = assembler.Assemble(content)
 	fmt.Println(parsed)
 }
 

@@ -174,12 +174,13 @@ func TestParse(t *testing.T) {
 		"M=D",
 	}
 
-	actualLines := getParser().Parse(str)
+	result := getParser()
+	result.Parse(str)
 
-	AssertEqualsInt(t, len(actualLines), len(expectedLines))
+	AssertEqualsInt(t, len(result.AssemblyLines), len(expectedLines))
 	for i := range expectedLines {
 		expected := expectedLines[i]
-		actual := actualLines[i]
+		actual := result.AssemblyLines[i]
 		AssertEqualsString(t, expected, actual)
 	}
 }

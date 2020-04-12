@@ -14,7 +14,7 @@ func getParser() *ParseResult {
 	return &ParseResult{*GetSymbolTable(), nil}
 }
 
-func (p *ParseResult) Parse(content string) []string {
+func (p *ParseResult) Parse(content string) {
 	p.AssemblyLines = strings.Split(content, "\n")
 	p.AssemblyLines = Filter(p.AssemblyLines, isNotEmptyLine)
 	p.AssemblyLines = Filter(p.AssemblyLines, isNotComment)
@@ -22,7 +22,6 @@ func (p *ParseResult) Parse(content string) []string {
 	p.AssemblyLines = MapString(p.AssemblyLines, strings.TrimSpace)
 	p.removeLabelsAndSaveVariables()
 	p.changeVariableValuesIntoAssemblyLines()
-	return p.AssemblyLines
 }
 
 func (p *ParseResult) removeLabelsAndSaveVariables() {

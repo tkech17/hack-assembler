@@ -125,7 +125,7 @@ func getReservedSymbolsMap() map[string]string {
 		"THIS":   "3",
 		"THAT":   "4",
 	}
-	for i := 1; i <= 15; i++ {
+	for i := 0; i <= 15; i++ {
 		iAsString := strconv.Itoa(i)
 		reservedSymbols["R"+iAsString] = iAsString
 	}

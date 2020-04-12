@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	defaultDirectory = "ge/freeuni/ha/resources"
-	defaultFile      = "tmp.txt"
+	defaultDirectory = "resources"
+	defaultFile      = "Add.asm"
 )
 
 type Assembler interface {

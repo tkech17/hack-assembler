@@ -1,20 +1,21 @@
 package main
 
 type HackAssembler struct {
-
 }
 
-type Parser interface {
-	Parse(content string)
+type TranslatorI interface {
+	Translate(parser *ParseResult) string
 }
 
-var parser Parser = getParser()
+var translator TranslatorI = GetTranslator()
 
 func GetHackAssembler() *HackAssembler {
 	return &HackAssembler{}
 }
 
-func (a *HackAssembler) Assemble(assembly string) string  {
+func (a *HackAssembler) Assemble(assembly string) string {
+	var parser = getParser()
 	parser.Parse(assembly)
-	return ""
+	result := translator.Translate(parser)
+	return result
 }

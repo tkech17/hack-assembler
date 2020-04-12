@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -46,9 +47,8 @@ func TestParseLabelName(t *testing.T) {
 }
 
 func TestSaveLabelIndexes(t *testing.T) {
-	result := ParseResult{*GetSymbolTable(), []string{"@LABEL"}}
-	labels := map[string]bool{"LABEL": true}
-	result.saveLabelIndexes(labels)
+	result := ParseResult{*GetSymbolTable(), []string{"(LABEL)", "@LABEL"}}
+	result.saveLabelIndexes()
 
 	symbol, exists := result.GetReservedSymbol("LABEL")
 
@@ -57,8 +57,8 @@ func TestSaveLabelIndexes(t *testing.T) {
 }
 
 func TestSaveVariables(t *testing.T) {
-	result := ParseResult{*GetSymbolTable(), []string{"@LABEL", "D=M", "@12", "@temp", "@temp2"}}
-	labels := map[string]bool{"LABEL": true}
+	result := ParseResult{*GetSymbolTable(), []string{"(LABEL)", "@LABEL", "D=M", "@12", "@temp", "@temp2"}}
+	labels := map[string]string{"LABEL": ""}
 	result.saveVariables(labels)
 
 	symbol, exists := result.GetReservedSymbol("temp")
@@ -87,7 +87,7 @@ func TestChangeVariableValuesIntoAssemblyLines(t *testing.T) {
 }
 
 func TestRemoveLabelsAndSaveVariables(t *testing.T) {
-	result := ParseResult{*GetSymbolTable(), []string{"(LABEL)", "@LABEL", "@12", "D=1", "@b!&a"}}
+	result := ParseResult{*GetSymbolTable(), []string{"(BLO)(LABEL)", "@LABEL", "@12", "D=1", "@b!&a"}}
 	result.removeLabelsAndSaveVariables()
 
 	AssertEqualsInt(t, 4, len(result.AssemblyLines))
@@ -105,12 +105,39 @@ func TestRemoveLabelsAndSaveVariables(t *testing.T) {
 }
 
 func TestContains(t *testing.T) {
-	labels := map[string]bool{"LABEL": true}
+	labels := map[string]string{"LABEL": "string"}
 	containsLabel := contains(labels, "LABEL")
 	containsBla := contains(labels, "BLA")
 
 	AssertFalse(t, containsBla, "Should Not Contain [BLA]")
 	AssertTrue(t, containsLabel, "Should Contain [LABEL]")
+}
+
+func TestGetLabelsFromLine(t *testing.T) {
+	labels := getLabelsFromLine("(A)(B)(C)@0")
+
+	AssertEqualsInt(t,3,len(labels))
+	AssertEqualsString(t, "A", labels[0])
+	AssertEqualsString(t, "B", labels[1])
+	AssertEqualsString(t, "C", labels[2])
+}
+
+func TestRemoveLabelFromLine(t *testing.T) {
+	AssertEqualsString(t, "A=D", removeLabelFromLine("A=D"))
+	AssertEqualsString(t, "@LABEL", removeLabelFromLine("(LOBEL)(LABEL)@LABEL"))
+}
+
+func TestUnionLabelWithLine(t *testing.T) {
+	result := ParseResult{*GetSymbolTable(), []string{"(LABEL)", "@LABEL", "@12", "D=1", "@b!&a"}}
+	result.unionLabelWithLine()
+
+	lines := result.AssemblyLines
+	fmt.Println(lines)
+	AssertEqualsInt(t, 4, len(lines))
+	AssertEqualsString(t, "(LABEL)@LABEL", lines[0])
+	AssertEqualsString(t, "@12", lines[1])
+	AssertEqualsString(t, "D=1", lines[2])
+	AssertEqualsString(t, "@b!&a", lines[3])
 }
 
 func TestIsVariable(t *testing.T) {
@@ -119,9 +146,14 @@ func TestIsVariable(t *testing.T) {
 	AssertTrue(t, isVariable("BLA33"), "[BLA33] is Variable")
 }
 
+func TestRemoveSpaces(t *testing.T) {
+	AssertEqualsString(t, "", removeSpaces("          "))
+	AssertEqualsString(t, "A=5", removeSpaces(" A  = 5   "))
+}
+
 func TestGetStringReplaceValuesFunc(t *testing.T) {
 	var str = "Toko Amiko BLA BL"
-	var values = map[string]string{"Toko": "...", "BLA": "BLU", "BL":"LOL"}
+	var values = map[string]string{"Toko": "...", "BLA": "BLU", "BL": "LOL"}
 	stringReplaceFunc := getStringReplaceValuesFunc(values)
 
 	actual := stringReplaceFunc(str)
@@ -131,7 +163,7 @@ func TestGetStringReplaceValuesFunc(t *testing.T) {
 	//-------------------------------------------------------------//
 
 	str = "@Toko Amiko BLA BL"
-	values = map[string]string{"Toko": "...", "BLA": "BLU", "BL":"LOL"}
+	values = map[string]string{"Toko": "...", "BLA": "BLU", "BL": "LOL"}
 	stringReplaceFunc = getStringReplaceValuesFunc(values)
 
 	actual = stringReplaceFunc(str)
@@ -141,7 +173,7 @@ func TestGetStringReplaceValuesFunc(t *testing.T) {
 	//-------------------------------------------------------------//
 
 	str = "@Toko"
-	values = map[string]string{"Toko": "...", "BLA": "BLU", "BL":"LOL"}
+	values = map[string]string{"Toko": "...", "BLA": "BLU", "BL": "LOL"}
 	stringReplaceFunc = getStringReplaceValuesFunc(values)
 
 	actual = stringReplaceFunc(str)
@@ -159,11 +191,11 @@ func TestParse(t *testing.T) {
 		"  // Computes R0 = 2 + 3  (R0 refers to RAM[0])\n" +
 		"\n" +
 		"@2 //ბლა\n" +
-		"D=A\n" +
+		"D =   A \n" +
 		"  @3  \n" +
 		"    D=D+A\n" +
 		"@temp\n" +
-		"M=D\n"
+		"M   =  D\n"
 
 	var expectedLines = []string{
 		"@2",

@@ -20,32 +20,74 @@ func (p *ParseResult) Parse(content string) {
 	p.AssemblyLines = Filter(p.AssemblyLines, isNotComment)
 	p.AssemblyLines = MapString(p.AssemblyLines, removeCommentLine)
 	p.AssemblyLines = MapString(p.AssemblyLines, strings.TrimSpace)
+	p.AssemblyLines = MapString(p.AssemblyLines, removeSpaces)
 	p.removeLabelsAndSaveVariables()
 	p.changeVariableValuesIntoAssemblyLines()
+}
+
+func removeSpaces(str string) string {
+	return strings.ReplaceAll(str, " ", "")
 }
 
 func (p *ParseResult) removeLabelsAndSaveVariables() {
 	labelLines := Filter(p.AssemblyLines, isLabel)
 	labelNames := MapString(labelLines, parseLabelName)
 	labelsMap := mapFrom(labelNames)
-	p.AssemblyLines = Filter(p.AssemblyLines, isNotLabel)
-	p.saveLabelIndexes(labelsMap)
+	p.unionLabelWithLine()
+	p.saveLabelIndexes()
 	p.saveVariables(labelsMap)
+	p.AssemblyLines = MapString(p.AssemblyLines, removeLabelFromLine)
 }
 
-func (p *ParseResult) saveLabelIndexes(labels map[string]bool) {
+func removeLabelFromLine(str string) string {
+	line := strings.Split(str, ")")
+	if len(line) == 1 {
+		return str
+	}
+	return line[len(line)-1]
+}
+
+func (p *ParseResult) unionLabelWithLine() {
+	var result []string
+	lines := p.AssemblyLines
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		if isLabel(line) {
+			nextLine := lines[i+1]
+			lines[i+1] = line + nextLine
+			continue
+		}
+		result = append(result, line)
+	}
+	p.AssemblyLines = result
+}
+
+func (p *ParseResult) saveLabelIndexes() {
 	for index, line := range p.AssemblyLines {
-		possibleLabel := line[1:]
-		if contains(labels, possibleLabel) {
-			p.AddReservedSymbolWithValue(possibleLabel, strconv.Itoa(index))
+		labels := getLabelsFromLine(line)
+		indexStr := strconv.Itoa(index)
+		for _, label := range labels {
+			p.AddReservedSymbolWithValue(label, indexStr)
 		}
 	}
 }
 
-func (p *ParseResult) saveVariables(labelsMap map[string]bool) {
+func getLabelsFromLine(line string) []string {
+	var result []string
+
+	splitLine := strings.Split(line, ")")
+	for _, str := range splitLine {
+		if strings.HasPrefix(str, "(") {
+			result = append(result, str[1:])
+		}
+	}
+	return result
+}
+
+func (p *ParseResult) saveVariables(labelsMap map[string]string) {
 	for _, line := range p.AssemblyLines {
 		possibleVariable := line[1:]
-		if line[0] == '@' && !contains(labelsMap, possibleVariable) && isVariable(possibleVariable) {
+		if line[0] == '@' && !contains(p.reservedSymbols, possibleVariable) && !contains(labelsMap, possibleVariable) && isVariable(possibleVariable) {
 			p.AddReservedSymbol(possibleVariable)
 		}
 	}
@@ -64,7 +106,7 @@ func getStringReplaceValuesFunc(symbols map[string]string) func(str string) stri
 			if strings.HasPrefix(result, key+" ") {
 				result = strings.Replace(result, key, value, 1)
 			}
-			if strings.HasPrefix(result, "@"+key+" ") || result == "@"+key{
+			if strings.HasPrefix(result, "@"+key+" ") || result == "@"+key {
 				result = strings.Replace(result, "@"+key, "@"+value, 1)
 			}
 			if strings.HasSuffix(result, " "+key) {
@@ -80,7 +122,7 @@ func isVariable(variable string) bool {
 	return err != nil
 }
 
-func contains(mp map[string]bool, str string) bool {
+func contains(mp map[string]string, str string) bool {
 	_, ok := mp[str]
 	return ok
 }
@@ -90,16 +132,16 @@ func parseLabelName(str string) string {
 	return str[1 : strLen-1]
 }
 
-func mapFrom(labels []string) map[string]bool {
-	var labelsMap = make(map[string]bool)
+func mapFrom(labels []string) map[string]string {
+	var labelsMap = make(map[string]string)
 	for _, label := range labels {
-		labelsMap[label] = true
+		labelsMap[label] = ""
 	}
 	return labelsMap
 }
 
 func isLabel(line string) bool {
-	return strings.HasPrefix(line, "(")
+	return strings.HasPrefix(line, "(") && strings.HasSuffix(line, ")")
 }
 
 func isNotLabel(line string) bool {

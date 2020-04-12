@@ -102,5 +102,5 @@ func TestSymbolTable_GetReservedSymbolKeys(t *testing.T) {
 	table.AddReservedSymbol(symbol)
 
 	reservedSymbols := table.GetReservedSymbols()
-	AssertEqualsInt(t, 23, len(reservedSymbols))
+	AssertEqualsInt(t, 24, len(reservedSymbols))
 }

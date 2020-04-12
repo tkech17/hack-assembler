@@ -24,7 +24,6 @@ func main() {
 	var content = getContentFromFile()
 	var parsed = assembler.Assemble(content)
 	saveIntoDestinationFile(parsed)
-	fmt.Println(parsed)
 }
 
 func saveIntoDestinationFile(content string) {
@@ -35,7 +34,6 @@ func saveIntoDestinationFile(content string) {
 			log.Fatal(err)
 		}
 	}
-	fmt.Println(destFile)
 	wd, _ := os.Getwd()
 	file, err := os.Create(wd + "/" + destFile)
 	defer closeFile(file)
@@ -51,7 +49,6 @@ func saveIntoDestinationFile(content string) {
 
 //noinspection GoUnhandledErrorResult
 func closeFile(f *os.File) {
-	fmt.Println("closing")
 	err := f.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)

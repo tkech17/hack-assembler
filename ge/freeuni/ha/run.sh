@@ -1,0 +1,1 @@
+go run Main.go HackAssembler.go Parser.go SliceUtils.go SymbolTable.go TestUtils.go Translator.go
